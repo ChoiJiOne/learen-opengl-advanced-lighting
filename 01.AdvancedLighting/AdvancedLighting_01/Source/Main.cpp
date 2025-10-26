@@ -3,8 +3,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #include "Shader.h"
@@ -21,6 +19,9 @@ unsigned int loadTexture(const char* path);
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+
+bool blinn = false;
+bool bliinKeyPressed = false;
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
@@ -65,77 +66,22 @@ int main(void)
 		return -1;
 	}
 
-	// CHECKME: 깊이 테스트 활성화.
-	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST); // CHECKME: 깊이 테스트 활성화.
+	glEnable(GL_BLEND); // CHECKME: 블랜드 테스트 활성화
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	Shader lightingShader("Shader/MultipleLights.vert", "Shader/MultipleLights.frag");
-	Shader lightCubeShader("Shader/LightCube.vert", "Shader/LightCube.frag");
+	Shader advancedLightingShader("Shader/AdvancedLighting.vert", "Shader/AdvancedLighting.frag");
 
-	std::vector<glm::vec3> cubePositions =
-	{
-		glm::vec3( 0.0f,  0.0f,   0.0f),
-		glm::vec3( 2.0f,  5.0f, -15.0f),
-		glm::vec3(-1.5f, -2.2f,  -2.5f),
-		glm::vec3(-3.8f, -2.0f, -12.3f),
-		glm::vec3( 2.4f, -0.4f,  -3.5f),
-		glm::vec3(-1.7f,  3.0f,  -7.5f),
-		glm::vec3( 1.3f, -2.0f,  -2.5f),
-		glm::vec3( 1.5f,  2.0f,  -2.5f),
-		glm::vec3( 1.5f,  0.2f,  -1.5f),
-		glm::vec3(-1.3f,  1.0f,  -1.5f)
-	};
-
-	std::vector<glm::vec3> pointLightPositions = {
-		glm::vec3( 0.7f,  0.2f,   2.0f),
-		glm::vec3( 2.3f, -3.3f,  -4.0f),
-		glm::vec3(-4.0f,  2.0f, -12.0f),
-		glm::vec3( 0.0f,  0.0f,  -3.0f)
-	};
-	
 	std::vector<float> vertices =
 	{ 
-		// positions          // normals           // texture coords
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
+		// positions            // normals         // texcoords
+		 10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+		-10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+		-10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
 
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-
-		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-
-		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
+		 10.0f, -0.5f,  10.0f,  0.0f, 1.0f, 0.0f,  10.0f,  0.0f,
+		-10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,   0.0f, 10.0f,
+		 10.0f, -0.5f, -10.0f,  0.0f, 1.0f, 0.0f,  10.0f, 10.0f
 	};
 
 	unsigned int vao;
@@ -160,8 +106,7 @@ int main(void)
 	}
 	glBindVertexArray(0);
 
-	unsigned int diffuseMap = loadTexture("Resources/container_diffuse.png");
-	unsigned int specularMap = loadTexture("Resources/container_specular.png");
+	unsigned int diffuseMap = loadTexture("Resources/wood.png");
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -179,71 +124,28 @@ int main(void)
 		glm::mat4 projection = glm::perspective(glm::radians(camera.GetZoom()), static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT), 0.1f, 100.0f);
 
 		// Pass
-		lightingShader.Bind();
-		{
-			lightingShader.SetInt("material.diffuse", 0);
-			lightingShader.SetInt("material.specular", 1);
-			lightingShader.SetFloat("material.shininess", 32.0f);
+		advancedLightingShader.Bind();
+		{			
+			advancedLightingShader.SetMat4("model", glm::mat4(1.0f));
+			advancedLightingShader.SetMat4("view", view);
+			advancedLightingShader.SetMat4("projection", projection);
 
-			lightingShader.SetVec3("viewPos", camera.GetPosition());
-			lightingShader.SetMat4("view", view);
-			lightingShader.SetMat4("projection", projection);
+			advancedLightingShader.SetVec3("lightPos", lightPos);
+			advancedLightingShader.SetVec3("viewPos", camera.GetPosition());
 
-			// Directional Light
-			lightingShader.SetVec3("directionalLight.direction", -0.2f, -1.0f, -0.3f);
-			lightingShader.SetVec3("directionalLight.ambient", 0.05f, 0.05f, 0.05f);
-			lightingShader.SetVec3("directionalLight.diffuse", 0.4f, 0.4f, 0.4f);
-			lightingShader.SetVec3("directionalLight.specular", 0.5f, 0.5f, 0.5f);
-
-			// Point Light
-			for (std::size_t index = 0; index < pointLightPositions.size(); ++index)
-			{
-				lightingShader.SetVec3("pointLights[" + std::to_string(index) + "].position", pointLightPositions[index]);
-				lightingShader.SetVec3("pointLights[" + std::to_string(index) + "].ambient", glm::vec3(0.05f, 0.05f, 0.05f));
-				lightingShader.SetVec3("pointLights[" + std::to_string(index) + "].diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
-				lightingShader.SetVec3("pointLights[" + std::to_string(index) + "].specular", glm::vec3(1.0f, 1.0f, 1.0f));
-				lightingShader.SetFloat("pointLights[" + std::to_string(index) + "].constant", 1.0f);
-				lightingShader.SetFloat("pointLights[" + std::to_string(index) + "].linear", 0.09f);
-				lightingShader.SetFloat("pointLights[" + std::to_string(index) + "].quadratic", 0.032f);
-			}
-
-			// Spot Light
-			lightingShader.SetVec3("spotLight.position", camera.GetPosition());
-			lightingShader.SetVec3("spotLight.direction", camera.GetFront());
-			lightingShader.SetVec3("spotLight.ambient", glm::vec3(0.0f, 0.0f, 0.0f));
-			lightingShader.SetVec3("spotLight.diffuse", glm::vec3(1.0f, 1.0f, 1.0f));
-			lightingShader.SetVec3("spotLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-			lightingShader.SetFloat("spotLight.constant", 1.0f);
-			lightingShader.SetFloat("spotLight.linear", 0.09f);
-			lightingShader.SetFloat("spotLight.quadratic", 0.032f);
-			lightingShader.SetFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
-			lightingShader.SetFloat("spotLight.outerCutOff", glm::cos(glm::radians(17.5f)));
-
+			advancedLightingShader.SetInt("blinn", blinn);
+			
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseMap);
 
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, specularMap);
-
 			glBindVertexArray(vao);
-			for (std::size_t index = 0; index < cubePositions.size(); ++index)
-			{
-				float angle = 20.0f * static_cast<float>(index);
-
-				glm::mat4 model = glm::mat4(1.0f);
-				model = glm::translate(model, cubePositions[index]);
-				model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-
-				lightingShader.SetMat4("model", model);
-				glDrawArrays(GL_TRIANGLES, 0, 36);
-			}
+			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
-		lightingShader.Unbind();
+		advancedLightingShader.Unbind();
 
 		glfwSwapBuffers(window);
 	}
 
-	glDeleteTextures(1, &specularMap);
 	glDeleteTextures(1, &diffuseMap);
 	glDeleteBuffers(1, &vbo);
 	glDeleteVertexArrays(1, &vao);
@@ -280,6 +182,25 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 	{
 		camera.ProcessKeyboard(Camera::EDirection::RIGHT, deltaTime);
+	}
+
+	bool isDirty = false;
+	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !bliinKeyPressed)
+	{
+		blinn = !blinn;
+		bliinKeyPressed = true;
+		isDirty = true;
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE)
+	{
+		bliinKeyPressed = false;
+		isDirty = true;
+	}
+
+	if (isDirty)
+	{
+		std::cout << (blinn ? "Blinn-Phong" : "Phong") << std::endl;
 	}
 }
 
