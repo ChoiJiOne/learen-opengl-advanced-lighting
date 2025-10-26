@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.30.3)
+
+set(PROJECT_NAME "AdvancedLighting_01")
+set(PROJECT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
+set(SOURCE_PATH "${PROJECT_PATH}/Source")
+set(SHADER_PATH "${PROJECT_PATH}/Shader")
+
+file(GLOB_RECURSE SOURCE_FILE "${SOURCE_PATH}/**")
+file(GLOB_RECURSE SHADER_FILE "${SHADER_PATH}/**")
+
+add_executable(${PROJECT_NAME} ${SOURCE_FILE} ${SHADER_FILE})
+target_include_directories(${PROJECT_NAME} PUBLIC ${SOURCE_PATH} ${SHADER_FILE} ${Stb_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} PUBLIC glfw glad::glad glm::glm)
+
+set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+
+source_group(TREE "${SOURCE_PATH}" PREFIX "Source" FILES ${SOURCE_FILE})
+source_group(TREE "${SHADER_PATH}" PREFIX "Shader" FILES ${SHADER_FILE})

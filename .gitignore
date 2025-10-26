@@ -1,0 +1,27 @@
+# Visual Studio 관련 설정.
+Win64
+Solution
+Cache
+Build
+.vs
+*.vcxproj.filters
+*.vcxproj.user
+*.tlog
+*.pdb
+*.recipe
+*.ilk
+*.log
+*.idb
+*.sln
+*.vcxproj
+*.aps
+*.bin
+
+# 파이썬 관련 설정
+.venv
+.vscode
+__pycache__
+
+
+# 기타 커밋하지 말아야 할 파일
+Temp
